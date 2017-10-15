@@ -1,35 +1,77 @@
 import sqlite3   #enable control of an sqlite database
 import csv       #facilitates CSV I/O
 
-#open csv files
-peeps = csv.DictReader(open("peeps.csv"))
-peeps_value = []
-courses = csv.DictReader(open("courses.csv"))
+
+'''
+csv_to_sql helper function
+Adds quotes around TEXT data before putting it in INSERT INTO
+List and type_list must be same length
+'''
+def stringify_vals(list, type_list):
+    retstr = ""
+    ctr = 0
+    for i,j in zip(list,type_list):
+        if j == "TEXT":
+            retstr += "'" + i + "'"
+        else:
+            retstr += i
+        ctr += 1
+        if ctr < len(list):
+            retstr += ","
+    return retstr
+
+'''
+csv_to_sql helper function
+Maps dict key (aka db field header) to type. Make sure you put in the types
+in the correct order!
+Keys and type_list must be same length
+'''
+def map_type(keys, type_list):
+    retstr = ""
+    ctr = 0
+    for i,j in zip(keys, type_list):
+        retstr += i + " " + j
+        ctr += 1
+        if ctr < len(keys):
+            retstr += ","
+    return retstr
+
+'''
+Builds a csv into a table in sqlite
+'''
+def csv_to_sql(table_name, path_to_csvfile, type_list):
+
+    dictReader = csv.DictReader(open(path_to_csvfile))
+    keys = dictReader.fieldnames
+
+    # collect keys
+    if len(keys) != len(type_list):
+        raise IndexError("Number of Types does not match number of Fields.")
+    th = map_type(keys,type_list)
+        
+    # create table
+    c.execute( "CREATE TABLE " + table_name + " (" + th + ");" )
+
+    # inserting values
+    values = []
+    for i in dictReader:
+        values = i.values()
+        if len(values) != len(type_list):
+            raise IndexError("Number of Types does not match number of Values.")
+        c_values = stringify_vals(values, type_list)
+        c.execute("INSERT INTO " + table_name + " VALUES (" + c_values + ");" )
+         
 
 
-f="discobandit.db"
-
-db = sqlite3.connect(f) #open if f exists, otherwise create
-c = db.cursor()    #facilitate db ops
-
-# create peeps table
-c.execute("CREATE TABLE peeps (name TEXT, age INTEGER, id INTEGER);")
-for i in peeps:
-    c.execute("INSERT INTO peeps VALUES ( '" +
-              i["name"] + "'," +
-              i["age"] + "," +
-              i["id"] +
-              ");")
-
-c.execute("CREATE TABLE courses (code TEXT, mark INTEGER, id INTEGER);")
-for i in courses:
-    c.execute("INSERT INTO courses VALUES ( '" +
-              i["code"] + "'," +
-              i["mark"] + "," +
-              i["id"] +
-              ");")
-
-db.commit() #save changes
-db.close()  #close database
-
+# RUNNNING .......
+if __name__ == "__main__":
+    db_name = "discobandit.db"
+    db = sqlite3.connect(db_name)  #open if f exists, otherwise create
+    c = db.cursor() #facilitate db ops
+    
+    csv_to_sql("peeps", "peeps.csv", ["INTEGER", "TEXT", "INTEGER"] )
+    csv_to_sql("courses", "courses.csv", ["TEXT", "INTEGER", "INTEGER"] )
+    
+    db.commit() # save changes
+    db.close() # close database
 
