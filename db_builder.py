@@ -69,8 +69,8 @@ if __name__ == "__main__":
     db = sqlite3.connect(db_name)  #open if f exists, otherwise create
     c = db.cursor() #facilitate db ops
     
-    csv_to_sql("peeps", "peeps.csv", ["INTEGER", "TEXT", "INTEGER"] )
-    csv_to_sql("courses", "courses.csv", ["TEXT", "INTEGER", "INTEGER"] )
+    csv_to_sql("peeps", "data/peeps.csv", ["INTEGER", "TEXT", "INTEGER"] )
+    csv_to_sql("courses", "data/courses.csv", ["TEXT", "INTEGER", "INTEGER"] )
     
     db.commit() # save changes
     db.close() # close database
